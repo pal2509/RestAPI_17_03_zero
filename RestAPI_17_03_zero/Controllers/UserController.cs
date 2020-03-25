@@ -12,33 +12,26 @@ namespace RestAPI_17_03_zero.Controllers
     public class UserController : ApiController
     {
 
-        private UserRepository userRepository;
-
+        //private UserRepository userRepository;
+        /*
         public UserController()
         {
             this.userRepository = new UserRepository();
         }
+        */
 
         /// <summary>
         /// Método para login do utilizador
         /// </summary>
         /// <param name="username">Nome de utilizador</param>
         /// <param name="password">Palavra-passe</param>
-        /// <returns>Retorn um token</returns>
+        /// <returns>Retorn um token, se o token for -1 o username e/ou password não existem, -2 se ja está loged in</returns>
         [Route("fileserver/login/{username}/{password}")]
         [HttpPost]
         public string Login(string username, string password)
         {
-            try
-            {
-                int res = userRepository.AuthUser(username, password);
-                if (res == -1) return "-1";
-                else return res.ToString();
-            }
-            catch(Exception e)
-            {
-                return e.ToString();
-            }
+                int res = UserRepository.LoginUser(username, password);
+                return res.ToString();
         }
 
         [Route("fileserver/dir/{token}")]

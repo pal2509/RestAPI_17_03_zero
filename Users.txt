@@ -1,4 +1,0 @@
-Id	Nome	Pass
-1	A	123
-2	B 	345
-3	C	123

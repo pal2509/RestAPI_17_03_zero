@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RestAPI_17_03_zero.Services;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,16 +9,36 @@ using System.Web.Http;
 
 namespace RestAPI_17_03_zero.Controllers
 {
-    public class AulaController : ApiController
+    public class UserController : ApiController
     {
 
+        private UserRepository userRepository;
 
+        public UserController()
+        {
+            this.userRepository = new UserRepository();
+        }
+
+        /// <summary>
+        /// Método para login do utilizador
+        /// </summary>
+        /// <param name="username">Nome de utilizador</param>
+        /// <param name="password">Palavra-passe</param>
+        /// <returns>Retorn um token</returns>
         [Route("fileserver/login/{username}/{password}")]
         [HttpPost]
         public string Login(string username, string password)
         {
-      
-            return "";
+            try
+            {
+                int res = userRepository.AuthUser(username, password);
+                if (res == -1) return "-1";
+                else return res.ToString();
+            }
+            catch(Exception e)
+            {
+                return e.ToString();
+            }
         }
 
         [Route("fileserver/dir/{token}")]

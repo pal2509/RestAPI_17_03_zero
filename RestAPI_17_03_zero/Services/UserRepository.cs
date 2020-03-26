@@ -1,4 +1,6 @@
-﻿using RestAPI_17_03_zero.Models;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using RestAPI_17_03_zero.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,22 +15,10 @@ namespace RestAPI_17_03_zero.Services
     {
 
         #region Attributes
-        static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin";
-        static List<User> users = LoadUsers();
-        static Dictionary<int, int> tokens = new Dictionary<int, int>();
-        #endregion
 
-        #region Constructor
-        /*
-        public static UserRepository()
-        {
-            FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin";
-
-            //CreateSomeUsers();
-            //LoadUsers();
-            //LoadUsers();
-        }
-        */
+        static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin"; //Ficheiro dos Users
+        static List<User> users = LoadUsers(); //Lista de utilizadores
+        static Dictionary<int, int> tokens = new Dictionary<int, int>(); //Lista para guradar os tokens de cada id que está loged in
         #endregion
 
         #region Properties
@@ -43,17 +33,22 @@ namespace RestAPI_17_03_zero.Services
 
         #endregion
         #region Methods
+
+        /// <summary>
+        /// Carrega os Users para memória
+        /// </summary>
+        /// <returns>Lista de Users</returns>
         private static List<User> LoadUsers()
         {
             if (File.Exists(FILEUSERS))
             {
-
+                List<User> u;
                 using (Stream str = File.OpenRead(FILEUSERS))
                 {
                     BinaryFormatter bf = new BinaryFormatter();
-                    users = (List<User>)bf.Deserialize(str);
+                    u = (List<User>)bf.Deserialize(str);
                 }
-                return users;
+                return u;
             }
             else
             {
@@ -61,6 +56,12 @@ namespace RestAPI_17_03_zero.Services
             }
         }
 
+        /// <summary>
+        /// Encontra um User através do username e password
+        /// </summary>
+        /// <param name="username">string username</param>
+        /// <param name="password">string password</param>
+        /// <returns>Retorna o User ou null caso não exista</returns>
         public static User UserExists(string username, string password)
         {
             User[] u = users.ToArray();
@@ -71,12 +72,17 @@ namespace RestAPI_17_03_zero.Services
             return null;
         }
 
+        /// <summary>
+        /// Adicona um User
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public static bool AddUser(string username, string password)
         {
             if (UserExists(username, password) == null)
             {
-                var rand = new Random((int)new DateTime().Ticks);
-                User u = new User(rand.Next(0, 50000), username, password);
+                User u = new User(users.Count + 1, username, password);
                 users.Add(u);
                 return true;
             }
@@ -93,14 +99,13 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
-        public static bool SaveUsers()
+        public static void SaveUsers()
         {
             using (Stream str = File.Open(FILEUSERS, FileMode.Create))
             {
                 BinaryFormatter bf = new BinaryFormatter();
                 bf.Serialize(str, users);
                 str.Close();
-                return true;
             }
         }
 
@@ -112,6 +117,9 @@ namespace RestAPI_17_03_zero.Services
             AddUser("admin", "admin");
             AddUser("user", "user");
             AddUser("user", "admin");
+            AddUser("aluno", "aluno");
+            AddUser("a17611", "admin");
+            AddUser("Paulo", "123");
             SaveUsers();
         }
 

@@ -28,10 +28,13 @@ namespace RestAPI_17_03_zero.Controllers
         /// <returns>Retorn um token, se o token for -1 o username e/ou password não existem, -2 se ja está loged in</returns>
         [Route("fileserver/login/{username}/{password}")]
         [HttpPost]
-        public string Login(string username, string password)
+        public int Login(string username, string password)
         {
-                int res = UserRepository.LoginUser(username, password);
-                return res.ToString();
+            //UserRepository.CreateSomeUsers();
+            //return 1;
+            int res = UserRepository.LoginUser(username, password);
+            return res;
+         
         }
 
         [Route("fileserver/dir/{token}")]

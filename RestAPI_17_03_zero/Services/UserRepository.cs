@@ -35,6 +35,67 @@ namespace RestAPI_17_03_zero.Services
         #region Methods
 
         /// <summary>
+        /// Login do utilizador
+        /// </summary>
+        /// <param name="username">Username</param>
+        /// <param name="password">Password</param>
+        /// <returns>Token se login com sucesso, -1 se o user não existe, -2 se já esta loged in</returns>
+        public static int LoginUser(string username, string password)
+        {
+
+            User u = UserExists(username, password);
+
+            if (u != null)
+            {
+                int token = u.Id + u.PassWord.Length * 2;
+                if (AddToken(token, u.Id) == true) return token;
+                else return -2;
+            }
+            else return -1;
+
+
+        }
+        
+        public static bool LogoutUser(int token)
+        {
+            if (TokenIsValid(token))
+            {
+                return tokens.Remove(token);
+            }
+            else return false;
+        }
+
+
+        private static bool TokenIsValid(int token)
+        {
+            return tokens.ContainsKey(token);
+        }
+
+        private static User TokenBelongings(int token)
+        {
+            if(TokenIsValid(token))
+            {
+                int id;
+                if(tokens.TryGetValue(token,out id))
+                {
+                    return GetUser(id);
+                }
+            }
+            return null;
+        }
+
+        private static User GetUser(int id)
+        {
+            User[] u = users.ToArray();
+            User user = (User)from User in u
+                        where User.Id == id
+                        select User;
+            return user;
+        }
+
+
+
+        /// <summary>
         /// Carrega os Users para memória
         /// </summary>
         /// <returns>Lista de Users</returns>
@@ -89,6 +150,12 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
+        /// <summary>
+        /// Adiciona um token á lista de tokens
+        /// </summary>
+        /// <param name="token">Token</param>
+        /// <param name="id">Id do user a que pertence o token</param>
+        /// <returns>Retorna true se adicionou, caso contrário false</returns>
         public static bool AddToken(int token, int id)
         {
             if (tokens.ContainsKey(token) == false)
@@ -99,7 +166,10 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
-        public static void SaveUsers()
+        /// <summary>
+        /// Guarda os Users para um ficheiro binário
+        /// </summary>
+        private static void SaveUsers()
         {
             using (Stream str = File.Open(FILEUSERS, FileMode.Create))
             {
@@ -124,28 +194,6 @@ namespace RestAPI_17_03_zero.Services
         }
 
         #endregion
-
-        /// <summary>
-        /// Login do utilizador
-        /// </summary>
-        /// <param name="username">Username</param>
-        /// <param name="password">Password</param>
-        /// <returns>Token se login com sucesso, -1 se o user não existe, -2 se já esta loged in</returns>
-        public static int LoginUser(string username, string password)
-        {
-
-            User u = UserExists(username, password);
-
-            if (u != null) 
-            {
-                int token = u.Id + u.PassWord.Length;
-                if (AddToken(token, u.Id) == true) return token;
-                else return -2;
-            }
-            else return -1;
-      
-            
-        }
 
 
 

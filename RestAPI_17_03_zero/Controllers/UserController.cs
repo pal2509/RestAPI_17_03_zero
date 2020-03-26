@@ -12,14 +12,6 @@ namespace RestAPI_17_03_zero.Controllers
     public class UserController : ApiController
     {
 
-        //private UserRepository userRepository;
-        /*
-        public UserController()
-        {
-            this.userRepository = new UserRepository();
-        }
-        */
-
         /// <summary>
         /// Método para login do utilizador
         /// </summary>
@@ -37,6 +29,24 @@ namespace RestAPI_17_03_zero.Controllers
          
         }
 
+        /// <summary>
+        /// Logout do User
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        [Route("fileserver/logout/{token}")]
+        [HttpPost]
+        public bool Logout(int token)
+        { 
+            return UserRepository.LogoutUser(token);
+        }
+
+
+        /// <summary>
+        /// Lista o diretório
+        /// </summary>
+        /// <param name="token">Token de acesso</param>
+        /// <returns></returns>
         [Route("fileserver/dir/{token}")]
         [HttpGet]
         public IEnumerable<string> FileList(string token)
@@ -46,17 +56,6 @@ namespace RestAPI_17_03_zero.Controllers
             return new string[] { "Aluno A", "Aluno B" };
         }
 
-        //Usar um token para permitir a autenticaçao que está guardado na api
-
-        [Route("fileserver/logout/{username}/{password}")]
-        [HttpPost]
-        public string Logout(string username, string password)
-        {
-
-
-
-            return "";
-        }
 
         [Route("fileserver/dir/FileDownload/{token}")]
         [HttpGet]

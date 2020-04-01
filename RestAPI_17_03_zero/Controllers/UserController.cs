@@ -2,9 +2,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Web;
 using System.Web.Http;
 
 namespace RestAPI_17_03_zero.Controllers
@@ -20,11 +22,11 @@ namespace RestAPI_17_03_zero.Controllers
         /// <returns>Retorn um token, se o token for -1 o username e/ou password não existem, -2 se ja está loged in</returns>
         [Route("fileserver/login/{username}/{password}")]
         [HttpPost]
-        public int Login(string username, string password)
+        public string Login(string username, string password)
         {
             //UserRepository.CreateSomeUsers();
             //return 1;
-            int res = UserRepository.LoginUser(username, password);
+            string res = UserRepository.LoginUser(username, password);
             return res;
          
         }
@@ -36,7 +38,7 @@ namespace RestAPI_17_03_zero.Controllers
         /// <returns></returns>
         [Route("fileserver/logout/{token}")]
         [HttpPost]
-        public bool Logout(int token)
+        public bool Logout(string token)
         { 
             return UserRepository.LogoutUser(token);
         }
@@ -49,31 +51,78 @@ namespace RestAPI_17_03_zero.Controllers
         /// <returns></returns>
         [Route("fileserver/dir/{token}")]
         [HttpGet]
-        public IEnumerable<string> FileList(string token)
+        public string[] FileList(string token)
         {
-
-
-            return new string[] { "Aluno A", "Aluno B" };
+            if (UserRepository.TokenIsValid(token))
+            {
+                return Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory);
+            }
+            else
+            {
+                string[] r = { "-1" };
+                return r;
+            }
+            
         }
 
 
         [Route("fileserver/dir/FileDownload/{token}")]
         [HttpGet]
-        public IEnumerable<string> FileDownload(string token)
+        public string FileDownload(string token)
         {
+            if (UserRepository.TokenIsValid(token))
+            {
+                var request = HttpContext.Current.Request;
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
+                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+                {
+                    request.InputStream.CopyTo(fs);
+                }
+                return "Sucesso";
+            }
+            else return "-1";
 
-
-            return new string[] { "Aluno A", "Aluno B" };
+           
         }
 
-        [Route("fileserver/dir/FileUpload/{token}")]
+  
+
+
+
+
+        [Route("fileserver/FileUpload/{token}")]
         [HttpPost]
-        public IEnumerable<string> FileUpload(string token)
+        public string FileUpload(string token)
         {
+            if (UserRepository.TokenIsValid(token))
+            {
+                var request = HttpContext.Current.Request;
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
+                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+                {
+                    request.InputStream.CopyTo(fs);
+                }
+                return "Sucesso";
+            }
+            else return "-1";
 
-
-            return new string[] { "Aluno A", "Aluno B" };
         }
+
+
+        /*
+        [Route("api/myfileupload")]
+        [HttpPost]
+        public string MyFileUpload()
+        {
+            var request = HttpContext.Current.Request;
+            var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
+            using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+            {
+                request.InputStream.CopyTo(fs);
+            }
+            return "uploaded";
+        }
+        */
 
 
     }

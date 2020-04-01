@@ -18,7 +18,7 @@ namespace RestAPI_17_03_zero.Services
 
         static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin"; //Ficheiro dos Users
         static List<User> users = LoadUsers(); //Lista de utilizadores
-        static Dictionary<int, int> tokens = new Dictionary<int, int>(); //Lista para guradar os tokens de cada id que está loged in
+        static Dictionary<string, int> tokens = new Dictionary<string, int>(); //Lista para guradar os tokens de cada id que está loged in
         #endregion
 
         #region Properties
@@ -40,38 +40,39 @@ namespace RestAPI_17_03_zero.Services
         /// <param name="username">Username</param>
         /// <param name="password">Password</param>
         /// <returns>Token se login com sucesso, -1 se o user não existe, -2 se já esta loged in</returns>
-        public static int LoginUser(string username, string password)
+        public static string LoginUser(string username, string password)
         {
 
             User u = UserExists(username, password);
 
             if (u != null)
             {
-                int token = u.Id + u.PassWord.Length * 2;
-                if (AddToken(token, u.Id) == true) return token;
-                else return -2;
+                int token = (u.Id + u.PassWord.Length * 2);
+                if (AddToken(token.ToString(), u.Id) == true) return token.ToString();
+                else return "-2";
             }
-            else return -1;
+            else return "-1";
 
 
         }
         
-        public static bool LogoutUser(int token)
+        public static bool LogoutUser(string token)
         {
             if (TokenIsValid(token))
             {
                 return tokens.Remove(token);
+
             }
             else return false;
         }
 
 
-        private static bool TokenIsValid(int token)
+        public static bool TokenIsValid(string token)
         {
             return tokens.ContainsKey(token);
         }
 
-        private static User TokenBelongings(int token)
+        private static User TokenBelongings(string token)
         {
             if(TokenIsValid(token))
             {
@@ -156,7 +157,7 @@ namespace RestAPI_17_03_zero.Services
         /// <param name="token">Token</param>
         /// <param name="id">Id do user a que pertence o token</param>
         /// <returns>Retorna true se adicionou, caso contrário false</returns>
-        public static bool AddToken(int token, int id)
+        public static bool AddToken(string token, int id)
         {
             if (tokens.ContainsKey(token) == false)
             {

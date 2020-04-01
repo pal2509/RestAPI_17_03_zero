@@ -157,7 +157,7 @@ namespace RestAPI_17_03_zero.Services
         /// <param name="token">Token</param>
         /// <param name="id">Id do user a que pertence o token</param>
         /// <returns>Retorna true se adicionou, caso contrário false</returns>
-        public static bool AddToken(string token, int id)
+        private static bool AddToken(string token, int id)
         {
             if (tokens.ContainsKey(token) == false)
             {

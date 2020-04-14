@@ -19,6 +19,7 @@ namespace RestAPI_17_03_zero.Services
         static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin"; //Ficheiro dos Users
         static List<User> users = LoadUsers(); //Lista de utilizadores
         static Dictionary<string, int> tokens = new Dictionary<string, int>(); //Lista para guradar os tokens de cada id que está loged in
+        static Random rand = new Random();
         #endregion
 
         #region Properties
@@ -40,22 +41,27 @@ namespace RestAPI_17_03_zero.Services
         /// <param name="username">Username</param>
         /// <param name="password">Password</param>
         /// <returns>Token se login com sucesso, -1 se o user não existe, -2 se já esta loged in</returns>
-        public static string LoginUser(string username, string password)
+        public static int LoginUser(string username, string password)
         {
 
             User u = UserExists(username, password);
 
             if (u != null)
             {
-                int token = (u.Id + u.PassWord.Length * 2);
-                if (AddToken(token.ToString(), u.Id) == true) return token.ToString();
-                else return "-2";
+                int token = rand.Next(1000, 9999);
+                if (AddToken(token.ToString(), u.Id) == true) return token;
+                else return -2;
             }
-            else return "-1";
+            else return -1;
 
 
         }
         
+        /// <summary>
+        /// Logout do user
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public static bool LogoutUser(string token)
         {
             if (TokenIsValid(token))
@@ -66,12 +72,21 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
-
+        /// <summary>
+        /// Verificaçao se o token é valido
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public static bool TokenIsValid(string token)
         {
             return tokens.ContainsKey(token);
         }
 
+        /// <summary>
+        /// Metodo para saber a que user pertence o token
+        /// </summary>
+        /// <param name="token">Token</param>
+        /// <returns>User </returns>
         private static User TokenBelongings(string token)
         {
             if(TokenIsValid(token))
@@ -85,6 +100,11 @@ namespace RestAPI_17_03_zero.Services
             return null;
         }
 
+        /// <summary>
+        /// Metodo para procurara e retornar um user 
+        /// </summary>
+        /// <param name="id">Id do user</param>
+        /// <returns>User</returns>
         private static User GetUser(int id)
         {
             User[] u = users.ToArray();
@@ -129,7 +149,7 @@ namespace RestAPI_17_03_zero.Services
             User[] u = users.ToArray();
             for (int i = 0; i < u.Length; i++)
             {
-                if (u[i].UserName.CompareTo(username) == 0) return u[i];
+                if (u[i].UserName.CompareTo(username) == 0 && u[i].PassWord.CompareTo(password) == 0) return u[i];
             }
             return null;
         }

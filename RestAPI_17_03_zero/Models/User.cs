@@ -17,6 +17,7 @@ namespace RestAPI_17_03_zero.Models
         int id;
         string username;
         string psswd;
+        int acclevel;
 
         #endregion
 
@@ -29,6 +30,13 @@ namespace RestAPI_17_03_zero.Models
         {
             get { return id; }
         }
+
+
+        public int Acclevel
+        {
+            get { return id; }
+        }
+
 
         /// <summary>
         /// Retorna o nome de utilizador
@@ -56,11 +64,12 @@ namespace RestAPI_17_03_zero.Models
         /// <param name="id">Id do utilizador</param>
         /// <param name="name">Nome de utilizador</param>
         /// <param name="psswd">Palavra-passe do utilizador</param>
-        public User(int id,string name,string psswd)
+        public User(int id,string name,string psswd,int acc)
         {
             this.id = id;
             this.username = name;
             this.psswd = psswd;
+            this.acclevel = acc;
         }
 
         #endregion

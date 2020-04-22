@@ -40,7 +40,7 @@ namespace RestAPI_17_03_zero.Controllers
         [HttpGet]
         public bool Logout(string token)
         { 
-            return UserRepository.LogoutUser(token);
+            return UserRepository.LogoutUser(int.Parse(token));
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace RestAPI_17_03_zero.Controllers
         [HttpGet]
         public string[] FileList(string token)
         {
-            if (UserRepository.TokenIsValid(token))
+            if (UserRepository.TokenIsValid(int.Parse(token)))
             {
                 return new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory).GetFiles().Select(d => d.Name).ToArray();//Leitura de todos os ficherios
                                                                                                       //no directorio atual
@@ -72,14 +72,14 @@ namespace RestAPI_17_03_zero.Controllers
         /// <param name="token">Token</param>
         /// <returns></returns>
 
-        [Route("fileserver/FileDownload/{token}")]
-        [HttpGet]
-        public string FileDownload(string token)
+        [Route("fileserver/FileDownload/{token}/{filename}")]
+        [HttpPost]
+        public string FileDownload(string token,string filename)
         {
-            if (UserRepository.TokenIsValid(token))//verificação se o token é valido
+            if (UserRepository.TokenIsValid(int.Parse(token)))//verificação se o token é valido
             {
                 var request = HttpContext.Current.Response;
-                var filepath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
+                var filepath = AppDomain.CurrentDomain.BaseDirectory + filename;
 
                 using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
                 {
@@ -105,10 +105,10 @@ namespace RestAPI_17_03_zero.Controllers
         /// <param name="token"></param>
         /// <returns></returns>
         [Route("fileserver/FileUpload/{token}")]
-        [HttpGet]
+        [HttpPost]
         public string FileUpload(string token)
         {
-            if (UserRepository.TokenIsValid(token))//Verificação se o token é valido
+            if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
             {
                 var request = HttpContext.Current.Request;//Pedido
                 var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];//Caminho do ficheiro
@@ -120,6 +120,36 @@ namespace RestAPI_17_03_zero.Controllers
             }
             else return "-1";
 
+        }
+
+
+        [Route("fileserver/FileDelete/{token}")]
+        [HttpPost]
+        public string FileDelete(string token)
+        {
+            if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
+            {
+                var request = HttpContext.Current.Request;//Pedido
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];//Caminho do ficheiro
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    return "1";
+                }
+                else return "-2";
+            }
+            else return "-1";
+
+        }
+
+        [Route("fileserver/SignUp")]
+        [HttpPost]
+        public string SignUp()
+        {
+            var request = HttpContext.Current.Request;
+            string username = request.Headers["username"];
+            string password = request.Headers["password"];
+            return "1";
         }
 
 

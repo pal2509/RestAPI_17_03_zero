@@ -21,12 +21,12 @@ namespace RestAPI_17_03_zero.Controllers
         /// <param name="password">Palavra-passe</param>
         /// <returns>Retorn um token, se o token for -1 o username e/ou password não existem, -2 se ja está loged in</returns>
         [Route("fileserver/login/{username}/{password}")]
-        [HttpPost]
-        public string Login(string username, string password)
+        [HttpGet]
+        public int Login(string username, string password)
         {
             //UserRepository.CreateSomeUsers();
             //return 1;
-            string res = UserRepository.LoginUser(username, password);
+            int res = UserRepository.LoginUser(username, password);
             return res;
          
         }
@@ -37,12 +37,11 @@ namespace RestAPI_17_03_zero.Controllers
         /// <param name="token"></param>
         /// <returns></returns>
         [Route("fileserver/logout/{token}")]
-        [HttpPost]
+        [HttpGet]
         public bool Logout(string token)
         { 
-            return UserRepository.LogoutUser(token);
+            return UserRepository.LogoutUser(int.Parse(token));
         }
-
 
         /// <summary>
         /// Lista o diretório
@@ -53,52 +52,67 @@ namespace RestAPI_17_03_zero.Controllers
         [HttpGet]
         public string[] FileList(string token)
         {
-            if (UserRepository.TokenIsValid(token))
+            if (UserRepository.TokenIsValid(int.Parse(token)))
             {
-                return Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory);
+                return new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory).GetFiles().Select(d => d.Name).ToArray();//Leitura de todos os ficherios
+                                                                                                      //no directorio atual
+                //return Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory);
             }
             else
             {
-                string[] r = { "-1" };
+                string[] r = { "-1", "Erro na leitura da pasta" };
                 return r;
             }
             
         }
 
+        /// <summary>
+        /// Metodo para o download de ficheiros
+        /// </summary>
+        /// <param name="token">Token</param>
+        /// <returns></returns>
 
-        [Route("fileserver/dir/FileDownload/{token}")]
-        [HttpGet]
-        public string FileDownload(string token)
+        [Route("fileserver/FileDownload/{token}/{filename}")]
+        [HttpPost]
+        public string FileDownload(string token,string filename)
         {
-            if (UserRepository.TokenIsValid(token))
+            if (UserRepository.TokenIsValid(int.Parse(token)))//verificação se o token é valido
             {
-                var request = HttpContext.Current.Request;
-                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
-                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
-                {
-                    request.InputStream.CopyTo(fs);
-                }
-                return "Sucesso";
-            }
-            else return "-1";
+                var request = HttpContext.Current.Response;
+                var filepath = AppDomain.CurrentDomain.BaseDirectory + filename;
 
-           
+                using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
+                {
+                    using (Stream requestStream = request.OutputStream)//
+                    {
+                        byte[] buffer = new byte[1024 * 4];
+                        int bytesLeft = 0;
+
+                        while ((bytesLeft = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            requestStream.Write(buffer, 0, bytesLeft);
+                        }
+                        return "Sucesso";
+                    }
+                }
+            }
+            else return "Token inválido!!!";        
         }
 
-  
-
-
-
-
+        /// <summary>
+        /// Metodo para upload de ficheiros
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("fileserver/FileUpload/{token}")]
         [HttpPost]
         public string FileUpload(string token)
         {
-            if (UserRepository.TokenIsValid(token))
+            if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
             {
-                var request = HttpContext.Current.Request;
-                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
-                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+                var request = HttpContext.Current.Request;//Pedido
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];//Caminho do ficheiro
+                using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))//Stream pra escrita do ficheiro
                 {
                     request.InputStream.CopyTo(fs);
                 }
@@ -106,6 +120,36 @@ namespace RestAPI_17_03_zero.Controllers
             }
             else return "-1";
 
+        }
+
+
+        [Route("fileserver/FileDelete/{token}")]
+        [HttpPost]
+        public string FileDelete(string token)
+        {
+            if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
+            {
+                var request = HttpContext.Current.Request;//Pedido
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];//Caminho do ficheiro
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    return "1";
+                }
+                else return "-2";
+            }
+            else return "-1";
+
+        }
+
+        [Route("fileserver/SignUp")]
+        [HttpPost]
+        public string SignUp()
+        {
+            var request = HttpContext.Current.Request;
+            string username = request.Headers["username"];
+            string password = request.Headers["password"];
+            return "1";
         }
 
 

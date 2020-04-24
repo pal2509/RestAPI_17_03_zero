@@ -91,6 +91,78 @@ namespace RestAPI_17_03_zero.Services
             conn.Close();
             return r;
         }
+
+        public int UserID(string username)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT id_user FROM users WHERE username = '{0}'", username);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            int r = -1;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+
+                    r = dataReader.GetInt32(0);
+
+                }
+            }
+
+            conn.Close();
+            return r;
+        }
+
+        public string GetUsername(int id)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT username FROM users WHERE id_user = {0}", id);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            string r = null;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetString(0);
+                }
+            }
+
+            conn.Close();
+            return r;
+        }
+
+
+        public int AddRegistrationRequest(string username, string psswd)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("INSERT INTO pedidoresg ( u_name, u_psswd ) values ( '{0}','{1}' );", username, psswd);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            sqlCommand.ExecuteNonQuery();
+            conn.Close();
+            return 1;
+        }
+
+        public bool RegRequestExists(string usrnm, string psswd)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT u_name FROM pedidoresg WHERE u_name = '{0}'", usrnm);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            string r = null;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetString(0);
+                }
+            }
+            conn.Close();
+            if (r == null) return false;
+            else return true;
+        }
+
     }
     
 }

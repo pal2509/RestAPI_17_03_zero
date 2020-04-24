@@ -17,13 +17,21 @@ namespace RestAPI_17_03_zero.Services
     {
 
         #region Attributes
-
-        //static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin"; //Ficheiro dos Users
-        //static string LOGFILES = AppDomain.CurrentDomain.BaseDirectory + "logFiles.bin"; //Ficheiro dos Users
         static List<Token> tokens = new List<Token>(); //Lista para guradar os tokens de cada id que está loged in
         static Random rand = new Random();
         #endregion
         #region Methods
+
+        public static int ResgitationRequest(string usrnm,string psswd)
+        {
+            DataBaseManager db = new DataBaseManager();
+            if (db.UserID(usrnm) == -1 && !db.RegRequestExists(usrnm,psswd))
+            {
+                db.AddRegistrationRequest(usrnm, psswd);
+                return 1;
+            }
+            else return -1;
+        }
 
         /// <summary>
         /// Login do utilizador
@@ -107,100 +115,6 @@ namespace RestAPI_17_03_zero.Services
             return false;
         }
 
-        ///// <summary>
-        ///// Metodo para procurara e retornar um user 
-        ///// </summary>
-        ///// <param name="id">Id do user</param>
-        ///// <returns>User</returns>
-        //private static User GetUser(int id)
-        //{
-        //    List<User> users = LoadUsers(FILEUSERS);
-        //    User[] u = users.ToArray();
-        //    User user = (User)from User in u
-        //                where User.Id == id
-        //                select User;
-        //    return user;
-        //}
-
-
-
-        ///// <summary>
-        ///// Carrega os Users para memória
-        ///// </summary>
-        ///// <returns>Lista de Users</returns>
-        //private static List<User> LoadUsers(string file)
-        //{
-        //    if (File.Exists(file))
-        //    {
-        //        List<User> u;
-        //        using (Stream str = File.OpenRead(file))
-        //        {
-        //            BinaryFormatter bf = new BinaryFormatter();
-        //            u = (List<User>)bf.Deserialize(str);
-        //        }
-        //        return u;
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
-        //}
-
-        //private static Dictionary<string,DateTime> LoadFiles(string file)
-        //{
-        //    if (File.Exists(file))
-        //    {
-        //        Dictionary<string,DateTime> u;
-        //        using (Stream str = File.OpenRead(file))
-        //        {
-        //            BinaryFormatter bf = new BinaryFormatter();
-        //            u = (Dictionary<string, DateTime>)bf.Deserialize(str);
-        //        }
-        //        return u;
-        //    }
-        //    else
-        //    {
-        //        return new Dictionary<string, DateTime>();
-        //    }
-        //}
-
-
-        ///// <summary>
-        ///// Encontra um User através do username e password
-        ///// </summary>
-        ///// <param name="username">string username</param>
-        ///// <param name="password">string password</param>
-        ///// <returns>Retorna o User ou null caso não exista</returns>
-        //public static User UserExists(string username, string password)
-        //{
-        //    List<User> users = LoadUsers(FILEUSERS);
-        //    User[] u = users.ToArray();
-        //    for (int i = 0; i < u.Length; i++)
-        //    {
-        //        if (u[i].UserName.CompareTo(username) == 0 && u[i].PassWord.CompareTo(password) == 0) return u[i];
-        //    }
-        //    return null;
-        //}
-
-        ///// <summary>
-        ///// Adicona um User
-        ///// </summary>
-        ///// <param name="username"></param>
-        ///// <param name="password"></param>
-        ///// <returns></returns>
-        //public static bool AddUser(string username, string password)
-        //{
-        //    if (UserExists(username, password) == null)
-        //    {
-        //        List<User> users = LoadUsers(FILEUSERS);
-        //        User u = new User(users.Count + 1, username, password, 1);
-        //        users.Add(u);
-        //        SaveUsers(users, FILEUSERS);
-        //        return true;
-        //    }
-        //    else return false;
-        //}
-
         /// <summary>
         /// Adiciona um token á lista de tokens
         /// </summary>
@@ -218,32 +132,30 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
-        ///// <summary>
-        ///// Guarda os Users para um ficheiro binário
-        ///// </summary>
-        //private static void SaveUsers(List<User> users, string FILENAME)
-        //{
-        //    using (Stream str = File.Open(FILEUSERS, FileMode.Create))
-        //    {
-        //        BinaryFormatter bf = new BinaryFormatter();
-        //        bf.Serialize(str, users);
-        //        str.Close();
-        //    }
-        //}
+        public static string GetUsername(int token)
+        {
+            if(TokenIsValid(token))
+            {
+                DataBaseManager db = new DataBaseManager();
+                return db.GetUsername(GetUserId(token));
+            }
+            return null;
+        }
 
-        //public static void CreateSomeUsers()
-        //{
+        private static int GetUserId(int token)
+        {
+            if (TokenIsValid(token))
+            {
+                Token[] t = tokens.ToArray();
 
+                foreach (Token a in t)
+                {
+                    if (a.Idtoken == token) return a.IdUser;
+                }
+            }
+            return -1;
+        }
 
-        //    AddUser("admin", "admin");
-        //    AddUser("admin", "admin");
-        //    AddUser("user", "user");
-        //    AddUser("user", "admin");
-        //    AddUser("aluno", "aluno");
-        //    AddUser("a17611", "admin");
-        //    AddUser("Paulo", "123");
-        //    SaveUsers();
-        //}
 
         #endregion
 

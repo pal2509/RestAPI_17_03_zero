@@ -50,8 +50,13 @@ namespace RestAPI_17_03_zero.Controllers
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))
             {
-                return new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory).GetFiles().Select(d => d.Name).ToArray();//Leitura de todos os ficherios
-                                                                                                      //no directorio atual
+                string username = UserRepository.GetUsername(int.Parse(token));
+                if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + username))
+                {
+                    DirectoryInfo di = Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + username);
+                }
+                return new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + UserRepository.GetUsername(int.Parse(token))).GetFiles().Select(d => d.Name).ToArray();
+                //Leitura de todos os ficherios no directorio atual
                 //return Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory);
             }
             else
@@ -68,14 +73,14 @@ namespace RestAPI_17_03_zero.Controllers
         /// <param name="token">Token</param>
         /// <returns></returns>
 
-        [Route("fileserver/FileDownload/{token}/{filename}")]
+        [Route("fileserver/FileDownload/{token}")]
         [HttpPost]
-        public string FileDownload(string token,string filename)
+        public string FileDownload(string token)
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))//verificação se o token é valido
             {
                 var request = HttpContext.Current.Response;
-                var filepath = AppDomain.CurrentDomain.BaseDirectory + filename;
+                var filepath = AppDomain.CurrentDomain.BaseDirectory + UserRepository.GetUsername(int.Parse(token))+ "\\" + request.Headers["filename"];
 
                 using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
                 {
@@ -107,7 +112,12 @@ namespace RestAPI_17_03_zero.Controllers
             if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
             {
                 var request = HttpContext.Current.Request;//Pedido
-                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];//Caminho do ficheiro
+                string username = UserRepository.GetUsername(int.Parse(token));
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
+                if(!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + username))
+                {
+                    DirectoryInfo di = Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + username);
+                } 
                 using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))//Stream pra escrita do ficheiro
                 {
                     request.InputStream.CopyTo(fs);
@@ -118,52 +128,39 @@ namespace RestAPI_17_03_zero.Controllers
 
         }
 
-
         [Route("fileserver/FileDelete/{token}")]
         [HttpPost]
-        public string FileDelete(string token)
+        public int FileDelete(string token)
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
             {
                 var request = HttpContext.Current.Request;//Pedido
-                var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];//Caminho do ficheiro
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                    return "1";
+                string username = UserRepository.GetUsername(int.Parse(token));
+                if (username != null)
+                { 
+                    var filePath = AppDomain.CurrentDomain.BaseDirectory + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        return 1;
+                    }
+                    else return -2;
                 }
-                else return "-2";
+                else return -1;
             }
-            else return "-1";
+            else return -1;
 
         }
 
         [Route("fileserver/SignUp")]
         [HttpPost]
-        public string SignUp()
+        public int SignUp()
         {
             var request = HttpContext.Current.Request;
             string username = request.Headers["username"];
-            string password = request.Headers["password"];
-            return "1";
+            string password = request.Headers["password"];           
+            return UserRepository.ResgitationRequest(username, password);
         }
-
-
-        /*
-        [Route("api/myfileupload")]
-        [HttpPost]
-        public string MyFileUpload()
-        {
-            var request = HttpContext.Current.Request;
-            var filePath = AppDomain.CurrentDomain.BaseDirectory + request.Headers["filename"];
-            using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
-            {
-                request.InputStream.CopyTo(fs);
-            }
-            return "uploaded";
-        }
-        */
-
 
     }
 }

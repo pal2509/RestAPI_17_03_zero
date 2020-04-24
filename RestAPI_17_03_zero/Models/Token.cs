@@ -31,7 +31,7 @@ namespace RestAPI_17_03_zero.Models
         public override bool Equals(object obj)
         {
             Token aux = (Token)obj;
-            return (this.idUser == aux.idUser );
+            return (this.idUser == aux.idUser && this.idToken == aux.idToken );
         }
     }
 }

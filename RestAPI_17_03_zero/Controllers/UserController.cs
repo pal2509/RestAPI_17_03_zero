@@ -24,11 +24,7 @@ namespace RestAPI_17_03_zero.Controllers
         [HttpGet]
         public int Login(string username, string password)
         {
-            //UserRepository.CreateSomeUsers();
-            //return 1;
-            int res = UserRepository.LoginUser(username, password);
-            return res;
-         
+            return UserRepository.LoginUser(username, password);
         }
 
         /// <summary>

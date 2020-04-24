@@ -8,6 +8,8 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Web;
 using System.Web.Http;
+using Npgsql;
+using System.Data;
 
 namespace RestAPI_17_03_zero.Services
 {
@@ -16,15 +18,10 @@ namespace RestAPI_17_03_zero.Services
 
         #region Attributes
 
-        static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin"; //Ficheiro dos Users
-        static string LOGFILES = AppDomain.CurrentDomain.BaseDirectory + "logFiles.bin"; //Ficheiro dos Users
+        //static string FILEUSERS = AppDomain.CurrentDomain.BaseDirectory + "Users.bin"; //Ficheiro dos Users
+        //static string LOGFILES = AppDomain.CurrentDomain.BaseDirectory + "logFiles.bin"; //Ficheiro dos Users
         static List<Token> tokens = new List<Token>(); //Lista para guradar os tokens de cada id que está loged in
         static Random rand = new Random();
-        #endregion
-
-        #region Properties
-            
-
         #endregion
         #region Methods
 
@@ -36,24 +33,24 @@ namespace RestAPI_17_03_zero.Services
         /// <returns>Token se login com sucesso, -1 se o user não existe, -2 se já esta loged in</returns>
         public static int LoginUser(string username, string password)
         {
+            DataBaseManager db = new DataBaseManager();
 
-            User u = UserExists(username, password);
-
-            if (u != null)
+            int uid = db.UserID(username, password);
+            if (uid != -1)
             {
-               
-                if (!IsLoggedIn(u.Id))
+                if (!IsLoggedIn(uid))
                 {
                     int token = rand.Next(1000, 9999);
-                    if (AddToken(token, u.Id))
-                    {                        
+                    if (AddToken(token, uid))
+                    {
                         return token;
                     }
-                    else return -2;
+                    else return -3;      
                 }
-                else return -3;
+                else return -2;
             }
             else return -1;
+
         }
         
         /// <summary>
@@ -65,7 +62,16 @@ namespace RestAPI_17_03_zero.Services
         {
             if (TokenIsValid(token))
             {
-                return true;
+                Token[] t = tokens.ToArray();
+                foreach (Token a in t)
+                {
+                    if (a.Idtoken == token)
+                    {
+                        tokens.Remove(a);
+                        return true;
+                    }
+                }
+                return false;
             }
             else return false;
         }
@@ -88,20 +94,6 @@ namespace RestAPI_17_03_zero.Services
             return false;
         }
 
-        /// <summary>
-        /// Metodo para saber a que user pertence o token
-        /// </summary>
-        /// <param name="token">Token</param>
-        /// <returns>User </returns>
-        private static User TokenBelongings(int token)
-        {
-            if(TokenIsValid(token))
-            {
-                
-            }
-            return null;
-        }
-
         private static bool IsLoggedIn(int idUser)
         {
             Token[] t = tokens.ToArray();
@@ -115,100 +107,99 @@ namespace RestAPI_17_03_zero.Services
             return false;
         }
 
-
-        /// <summary>
-        /// Metodo para procurara e retornar um user 
-        /// </summary>
-        /// <param name="id">Id do user</param>
-        /// <returns>User</returns>
-        private static User GetUser(int id)
-        {
-            List<User> users = LoadUsers(FILEUSERS);
-            User[] u = users.ToArray();
-            User user = (User)from User in u
-                        where User.Id == id
-                        select User;
-            return user;
-        }
-
+        ///// <summary>
+        ///// Metodo para procurara e retornar um user 
+        ///// </summary>
+        ///// <param name="id">Id do user</param>
+        ///// <returns>User</returns>
+        //private static User GetUser(int id)
+        //{
+        //    List<User> users = LoadUsers(FILEUSERS);
+        //    User[] u = users.ToArray();
+        //    User user = (User)from User in u
+        //                where User.Id == id
+        //                select User;
+        //    return user;
+        //}
 
 
-        /// <summary>
-        /// Carrega os Users para memória
-        /// </summary>
-        /// <returns>Lista de Users</returns>
-        private static List<User> LoadUsers(string file)
-        {
-            if (File.Exists(file))
-            {
-                List<User> u;
-                using (Stream str = File.OpenRead(file))
-                {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    u = (List<User>)bf.Deserialize(str);
-                }
-                return u;
-            }
-            else
-            {
-                return null;
-            }
-        }
 
-        private static Dictionary<string,DateTime> LoadFiles(string file)
-        {
-            if (File.Exists(file))
-            {
-                Dictionary<string,DateTime> u;
-                using (Stream str = File.OpenRead(file))
-                {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    u = (Dictionary<string, DateTime>)bf.Deserialize(str);
-                }
-                return u;
-            }
-            else
-            {
-                return new Dictionary<string, DateTime>();
-            }
-        }
+        ///// <summary>
+        ///// Carrega os Users para memória
+        ///// </summary>
+        ///// <returns>Lista de Users</returns>
+        //private static List<User> LoadUsers(string file)
+        //{
+        //    if (File.Exists(file))
+        //    {
+        //        List<User> u;
+        //        using (Stream str = File.OpenRead(file))
+        //        {
+        //            BinaryFormatter bf = new BinaryFormatter();
+        //            u = (List<User>)bf.Deserialize(str);
+        //        }
+        //        return u;
+        //    }
+        //    else
+        //    {
+        //        return null;
+        //    }
+        //}
+
+        //private static Dictionary<string,DateTime> LoadFiles(string file)
+        //{
+        //    if (File.Exists(file))
+        //    {
+        //        Dictionary<string,DateTime> u;
+        //        using (Stream str = File.OpenRead(file))
+        //        {
+        //            BinaryFormatter bf = new BinaryFormatter();
+        //            u = (Dictionary<string, DateTime>)bf.Deserialize(str);
+        //        }
+        //        return u;
+        //    }
+        //    else
+        //    {
+        //        return new Dictionary<string, DateTime>();
+        //    }
+        //}
 
 
-        /// <summary>
-        /// Encontra um User através do username e password
-        /// </summary>
-        /// <param name="username">string username</param>
-        /// <param name="password">string password</param>
-        /// <returns>Retorna o User ou null caso não exista</returns>
-        public static User UserExists(string username, string password)
-        {
-            List<User> users = LoadUsers(FILEUSERS);
-            User[] u = users.ToArray();
-            for (int i = 0; i < u.Length; i++)
-            {
-                if (u[i].UserName.CompareTo(username) == 0 && u[i].PassWord.CompareTo(password) == 0) return u[i];
-            }
-            return null;
-        }
+        ///// <summary>
+        ///// Encontra um User através do username e password
+        ///// </summary>
+        ///// <param name="username">string username</param>
+        ///// <param name="password">string password</param>
+        ///// <returns>Retorna o User ou null caso não exista</returns>
+        //public static User UserExists(string username, string password)
+        //{
+        //    List<User> users = LoadUsers(FILEUSERS);
+        //    User[] u = users.ToArray();
+        //    for (int i = 0; i < u.Length; i++)
+        //    {
+        //        if (u[i].UserName.CompareTo(username) == 0 && u[i].PassWord.CompareTo(password) == 0) return u[i];
+        //    }
+        //    return null;
+        //}
 
-        /// <summary>
-        /// Adicona um User
-        /// </summary>
-        /// <param name="username"></param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        public static bool AddUser(string username, string password)
-        {
-            if (UserExists(username, password) == null)
-            {
-                List<User> users = LoadUsers(FILEUSERS);
-                User u = new User(users.Count + 1, username, password, 1);
-                users.Add(u);
-                SaveUsers(users, FILEUSERS);
-                return true;
-            }
-            else return false;
-        }
+        ///// <summary>
+        ///// Adicona um User
+        ///// </summary>
+        ///// <param name="username"></param>
+        ///// <param name="password"></param>
+        ///// <returns></returns>
+        //public static bool AddUser(string username, string password)
+        //{
+        //    if (UserExists(username, password) == null)
+        //    {
+        //        List<User> users = LoadUsers(FILEUSERS);
+        //        User u = new User(users.Count + 1, username, password, 1);
+        //        users.Add(u);
+        //        SaveUsers(users, FILEUSERS);
+        //        return true;
+        //    }
+        //    else return false;
+        //}
 
         /// <summary>
         /// Adiciona um token á lista de tokens
@@ -227,18 +218,18 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
-        /// <summary>
-        /// Guarda os Users para um ficheiro binário
-        /// </summary>
-        private static void SaveUsers(List<User> users, string FILENAME)
-        {
-            using (Stream str = File.Open(FILEUSERS, FileMode.Create))
-            {
-                BinaryFormatter bf = new BinaryFormatter();
-                bf.Serialize(str, users);
-                str.Close();
-            }
-        }
+        ///// <summary>
+        ///// Guarda os Users para um ficheiro binário
+        ///// </summary>
+        //private static void SaveUsers(List<User> users, string FILENAME)
+        //{
+        //    using (Stream str = File.Open(FILEUSERS, FileMode.Create))
+        //    {
+        //        BinaryFormatter bf = new BinaryFormatter();
+        //        bf.Serialize(str, users);
+        //        str.Close();
+        //    }
+        //}
 
         //public static void CreateSomeUsers()
         //{

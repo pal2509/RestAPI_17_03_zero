@@ -113,6 +113,25 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        public int UserCount()
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT COUNT(id_user) FROM users ");
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            int r = -1;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetInt32(0);
+                }
+            }
+            conn.Close();
+            return r;
+        }
+
+
         public string GetUsername(int id)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -132,6 +151,47 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        public int GetAccessLevel(int id)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT acclevel FROM users WHERE id_user = {0}", id);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            int r = -1;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetInt32(0);
+                }
+            }
+
+            conn.Close();
+            return r;
+        }
+
+        public int AddUser(User u)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("INSERT INTO users ( id_user, username, u_psswd, acclevel ) values ( {0},'{1}','{2}',{3} );", u.Id,u.UserName, u.PassWord,u.Acclevel);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            sqlCommand.ExecuteNonQuery();
+            conn.Close();
+            return 1;
+        }
+
+
+        public int AddFileTime(string filename, TimeSpan time )
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("INSERT INTO filettl ( f_name, f_time ) values ( '{0}','{1}' );", filename, DateTime.Now.Add(time).ToString());
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            sqlCommand.ExecuteNonQuery();
+            conn.Close();
+            return 1;
+        }
 
         public int AddRegistrationRequest(string username, string psswd)
         {
@@ -143,6 +203,25 @@ namespace RestAPI_17_03_zero.Services
             conn.Close();
             return 1;
         }
+
+        public Registration GetRegRequest(string usrnm)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT * FROM pedidoresg WHERE u_name = '{0}'", usrnm);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            Registration r = null;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = new Registration(dataReader.GetString(0),dataReader.GetString(1));
+                }
+            }
+            conn.Close();
+            return r;
+        }
+
 
         public bool RegRequestExists(string usrnm, string psswd)
         {
@@ -162,6 +241,25 @@ namespace RestAPI_17_03_zero.Services
             if (r == null) return false;
             else return true;
         }
+
+        public List<string> RegRequestList()
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT u_name FROM pedidoresg");
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            List<string> result = new List<string>() ;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    result.Add(dataReader.GetString(0)); 
+                }
+            }
+            conn.Close();
+            return result;
+        }
+
 
     }
     

@@ -10,6 +10,7 @@ using System.Web;
 using System.Web.Http;
 using Npgsql;
 using System.Data;
+using System.Timers;
 
 namespace RestAPI_17_03_zero.Services
 {
@@ -19,10 +20,11 @@ namespace RestAPI_17_03_zero.Services
         #region Attributes
         static List<Token> tokens = new List<Token>(); //Lista para guradar os tokens de cada id que está loged in
         static Random rand = new Random();
+     
         #endregion
         #region Methods
 
-        public static int ResgitationRequest(string usrnm,string psswd)
+        public static int RegistrationRequest(string usrnm,string psswd)
         {
             DataBaseManager db = new DataBaseManager();
             if (db.UserID(usrnm) == -1 && !db.RegRequestExists(usrnm,psswd))
@@ -31,6 +33,29 @@ namespace RestAPI_17_03_zero.Services
                 return 1;
             }
             else return -1;
+        }
+
+        public static List<string> RequestList(int token)
+        {
+            DataBaseManager db = new DataBaseManager();
+            if (TokenIsValid(token) && db.GetAccessLevel(GetUserId(token)) == 2)
+            {
+                return db.RegRequestList();
+            }
+            return null;
+        }
+
+        public static int RequestAcception(int token, string username)
+        {
+            DataBaseManager db = new DataBaseManager();
+            if (TokenIsValid(token) && db.GetAccessLevel(GetUserId(token)) == 2)
+            {
+                Registration r = db.GetRegRequest(username);
+                User u = new User(db.UserCount() + 1, r.UserName, r.PassWord, 1);
+                db.AddUser(u);
+                return 1;
+            }
+            return -1;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using RestAPI_17_03_zero.Services;
+﻿using RestAPI_17_03_zero.Models;
+using RestAPI_17_03_zero.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -79,12 +80,14 @@ namespace RestAPI_17_03_zero.Controllers
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))//verificação se o token é valido
             {
-                var request = HttpContext.Current.Response;
+                var request = HttpContext.Current.Request;
                 var filepath = AppDomain.CurrentDomain.BaseDirectory + UserRepository.GetUsername(int.Parse(token))+ "\\" + request.Headers["filename"];
+
+                var res = HttpContext.Current.Response;
 
                 using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
                 {
-                    using (Stream requestStream = request.OutputStream)//
+                    using (Stream requestStream = res.OutputStream)//
                     {
                         byte[] buffer = new byte[1024 * 4];
                         int bytesLeft = 0;
@@ -114,10 +117,17 @@ namespace RestAPI_17_03_zero.Controllers
                 var request = HttpContext.Current.Request;//Pedido
                 string username = UserRepository.GetUsername(int.Parse(token));
                 var filePath = AppDomain.CurrentDomain.BaseDirectory + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
+                string ttl = request.Headers["ttl"];
                 if(!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + username))
                 {
                     DirectoryInfo di = Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + username);
-                } 
+                }
+                TimeSpan time;
+                if(TimeSpan.TryParse(ttl,out time))
+                {
+                    DataBaseManager db = new DataBaseManager();
+                    db.AddFileTime(request.Headers["filename"], time);
+                }
                 using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))//Stream pra escrita do ficheiro
                 {
                     request.InputStream.CopyTo(fs);
@@ -159,8 +169,32 @@ namespace RestAPI_17_03_zero.Controllers
             var request = HttpContext.Current.Request;
             string username = request.Headers["username"];
             string password = request.Headers["password"];           
-            return UserRepository.ResgitationRequest(username, password);
+            return UserRepository.RegistrationRequest(username, password);
         }
+
+        [Route("fileserver/RequestList/{token}")]
+        [HttpGet]
+        public List<string> RequestList(string token)
+        {
+            return UserRepository.RequestList(int.Parse(token));
+        }
+
+        [Route("fileserver/RequestManagement/{token}")]
+        [HttpPost]
+        public int RequestManagement(string token)
+        {
+            var request = HttpContext.Current.Request;
+            return UserRepository.RequestAcception(int.Parse(token), request.Headers["username"]);
+        }
+
+        [Route("fileserver/FileCopy/{token}")]
+        [HttpPost]
+        public int FileCopy(string token)
+        {
+            var request = HttpContext.Current.Request;
+            return 1;
+        }
+
 
     }
 }

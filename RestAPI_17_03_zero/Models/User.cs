@@ -34,7 +34,7 @@ namespace RestAPI_17_03_zero.Models
 
         public int Acclevel
         {
-            get { return id; }
+            get { return acclevel; }
         }
 
 

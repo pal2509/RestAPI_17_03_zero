@@ -10,7 +10,8 @@ using System.Web;
 using System.Web.Http;
 using Npgsql;
 using System.Data;
-using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RestAPI_17_03_zero.Services
 {
@@ -20,12 +21,42 @@ namespace RestAPI_17_03_zero.Services
         #region Attributes
         static List<Token> tokens = new List<Token>(); //Lista para guradar os tokens de cada id que está loged in
         static Random rand = new Random();
-     
+
         #endregion
         #region Methods
 
+        public static bool VerifyFileDate(string filename)
+        {
+            DataBaseManager db = new DataBaseManager();
+            Filettl f = db.GetFile(filename);
+            if (f != null)
+            {
+                DateTime now = DateTime.Now;
+                TimeSpan diff = now.Subtract(f.FVal);
+                if (diff > new TimeSpan(0, 0, 0))
+                {
+                    DeleteUserFile(f.Uid, f.FName);
+                    db.RemoveFilettl(f.FName);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static void DeleteUserFile(int id, string filename)
+        {
+            DataBaseManager db = new DataBaseManager();
+            var filepath = AppDomain.CurrentDomain.BaseDirectory + db.GetUsername(id) + "\\" + filename;
+            if (File.Exists(filepath))
+            {
+                File.Delete(filepath);
+
+            }
+        }
+
         public static int RegistrationRequest(string usrnm,string psswd)
         {
+            
             DataBaseManager db = new DataBaseManager();
             if (db.UserID(usrnm) == -1 && !db.RegRequestExists(usrnm,psswd))
             {
@@ -48,12 +79,22 @@ namespace RestAPI_17_03_zero.Services
         public static int RequestAcception(int token, string username)
         {
             DataBaseManager db = new DataBaseManager();
-            if (TokenIsValid(token) && db.GetAccessLevel(GetUserId(token)) == 2)
+            if (TokenIsValid(token))
             {
-                Registration r = db.GetRegRequest(username);
-                User u = new User(db.UserCount() + 1, r.UserName, r.PassWord, 1);
-                db.AddUser(u);
-                return 1;
+                if (db.GetAccessLevel(GetUserId(token)) == 2)
+                {
+                    Registration r = db.GetRegRequest(username);
+                    if (r != null)
+                    {                     
+                        User u = new User(db.UserCount() + 1, r.UserName, r.PassWord, 1);
+                        Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "Users\\" + u.UserName);
+                        db.RemoveRequest(username);
+                        db.AddUser(u);
+                        return 1;
+                    }
+                    else return -3;
+                }
+                else return -2;
             }
             return -1;
         }
@@ -167,7 +208,7 @@ namespace RestAPI_17_03_zero.Services
             return null;
         }
 
-        private static int GetUserId(int token)
+        public static int GetUserId(int token)
         {
             if (TokenIsValid(token))
             {

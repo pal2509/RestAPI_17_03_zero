@@ -69,75 +69,77 @@ namespace RestAPI_17_03_zero.Controllers
         }
 
         /// <summary>
-        /// Metodo para o download de ficheiros
+        /// Método para o download de ficheiros
         /// </summary>
         /// <param name="token">Token</param>
         /// <returns></returns>
-
         [Route("fileserver/FileDownload/{token}")]
         [HttpPost]
-        public string FileDownload(string token)
+        public int FileDownload(string token)
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))//verificação se o token é valido
             {
                 var request = HttpContext.Current.Request;
-                var filepath = AppDomain.CurrentDomain.BaseDirectory + UserRepository.GetUsername(int.Parse(token))+ "\\" + request.Headers["filename"];
-
+                var filepath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + UserRepository.GetUsername(int.Parse(token))+ "\\" + request.Headers["filename"];              
                 var res = HttpContext.Current.Response;
-
-                using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
-                {
-                    using (Stream requestStream = res.OutputStream)//
+                if (File.Exists(filepath) && !UserRepository.VerifyFileDate(request.Headers["filename"]))
+                {              
+                    using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
                     {
-                        byte[] buffer = new byte[1024 * 4];
-                        int bytesLeft = 0;
-
-                        while ((bytesLeft = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                        using (Stream requestStream = res.OutputStream)//
                         {
-                            requestStream.Write(buffer, 0, bytesLeft);
+                            byte[] buffer = new byte[1024 * 4];
+                            int bytesLeft = 0;
+
+                            while ((bytesLeft = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                requestStream.Write(buffer, 0, bytesLeft);
+                            }
+                            return 1;
                         }
-                        return "Sucesso";
                     }
                 }
+                else return -2;
             }
-            else return "Token inválido!!!";        
+            else return -1;        
         }
 
         /// <summary>
-        /// Metodo para upload de ficheiros
+        /// Método para upload de ficheiros
         /// </summary>
-        /// <param name="token"></param>
+        /// <param name="token">Token de acesso</param>
         /// <returns></returns>
         [Route("fileserver/FileUpload/{token}")]
         [HttpPost]
-        public string FileUpload(string token)
+        public int FileUpload(string token)
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))//Verificação se o token é valido
             {
                 var request = HttpContext.Current.Request;//Pedido
                 string username = UserRepository.GetUsername(int.Parse(token));
-                var filePath = AppDomain.CurrentDomain.BaseDirectory + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
+                var filePath = AppDomain.CurrentDomain.BaseDirectory +"Users\\" + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
                 string ttl = request.Headers["ttl"];
-                if(!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + username))
-                {
-                    DirectoryInfo di = Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + username);
-                }
                 TimeSpan time;
                 if(TimeSpan.TryParse(ttl,out time))
                 {
                     DataBaseManager db = new DataBaseManager();
-                    db.AddFileTime(request.Headers["filename"], time);
+                    db.AddFileTime(UserRepository.GetUserId(int.Parse(token)) , request.Headers["filename"], time);
                 }
                 using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))//Stream pra escrita do ficheiro
                 {
                     request.InputStream.CopyTo(fs);
                 }
-                return "Sucesso";
+                return 1;
             }
-            else return "-1";
+            else return -1;
 
         }
 
+        /// <summary>
+        /// Metodo para eliminar um ficheiro
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns>Retorna 1 em caso de sucesso, -2 se o ficheiro não existe, -1 se o token é inválido, -3 outro erro</returns>
         [Route("fileserver/FileDelete/{token}")]
         [HttpPost]
         public int FileDelete(string token)
@@ -156,12 +158,16 @@ namespace RestAPI_17_03_zero.Controllers
                     }
                     else return -2;
                 }
-                else return -1;
+                else return -3;
             }
             else return -1;
 
         }
 
+        /// <summary>
+        /// Método para efetuar o pedido de registo
+        /// </summary>
+        /// <returns>Retorna 1 se o pedido foi feito com sucesso, -1 se já existe esse nome de utilizador</returns>
         [Route("fileserver/SignUp")]
         [HttpPost]
         public int SignUp()
@@ -172,6 +178,12 @@ namespace RestAPI_17_03_zero.Controllers
             return UserRepository.RegistrationRequest(username, password);
         }
 
+        /// <summary>
+        /// Método que retorna a lista de pedidos de registo
+        /// NOTA: O utilizador para poder  utilizar este método deve ter um nivel de acesso elevado
+        /// </summary>
+        /// <param name="token">Token</param>
+        /// <returns>Uma lista de strings em que cada uma é o nome de utilizador do pedido de registo</returns>
         [Route("fileserver/RequestList/{token}")]
         [HttpGet]
         public List<string> RequestList(string token)
@@ -179,6 +191,12 @@ namespace RestAPI_17_03_zero.Controllers
             return UserRepository.RequestList(int.Parse(token));
         }
 
+        /// <summary>
+        /// Método para aceitar um pedido de registo que rebece o nome de utilizador do pedido de registo a registar
+        /// NOTA: O utilizador para poder  utilizar este método deve ter um nivel de acesso elevado
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("fileserver/RequestManagement/{token}")]
         [HttpPost]
         public int RequestManagement(string token)
@@ -187,6 +205,11 @@ namespace RestAPI_17_03_zero.Controllers
             return UserRepository.RequestAcception(int.Parse(token), request.Headers["username"]);
         }
 
+        /// <summary>
+        /// Método para copiar ficheiros
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("fileserver/FileCopy/{token}")]
         [HttpPost]
         public int FileCopy(string token)

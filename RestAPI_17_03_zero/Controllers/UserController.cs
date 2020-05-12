@@ -1,4 +1,5 @@
-﻿using RestAPI_17_03_zero.Models;
+﻿using Antlr.Runtime.Tree;
+using RestAPI_17_03_zero.Models;
 using RestAPI_17_03_zero.Services;
 using System;
 using System.Collections;
@@ -9,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Web;
 using System.Web.Http;
+using System.Web.UI;
 
 namespace RestAPI_17_03_zero.Controllers
 {
@@ -36,7 +38,7 @@ namespace RestAPI_17_03_zero.Controllers
         [Route("fileserver/logout/{token}")]
         [HttpGet]
         public bool Logout(string token)
-        { 
+        {
             return UserRepository.LogoutUser(int.Parse(token));
         }
 
@@ -51,12 +53,9 @@ namespace RestAPI_17_03_zero.Controllers
         {
             if (UserRepository.TokenIsValid(int.Parse(token)))
             {
+                UserRepository.VerifyUFilesDate(UserRepository.GetUserId(int.Parse(token)));
                 string username = UserRepository.GetUsername(int.Parse(token));
-                if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + username))
-                {
-                    DirectoryInfo di = Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + username);
-                }
-                return new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + UserRepository.GetUsername(int.Parse(token))).GetFiles().Select(d => d.Name).ToArray();
+                return new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + "Users\\" + UserRepository.GetUsername(int.Parse(token))).GetFiles().Select(d => d.Name).ToArray();
                 //Leitura de todos os ficherios no directorio atual
                 //return Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory);
             }
@@ -65,7 +64,7 @@ namespace RestAPI_17_03_zero.Controllers
                 string[] r = { "-1", "Erro na leitura da pasta" };
                 return r;
             }
-            
+
         }
 
         /// <summary>
@@ -77,13 +76,14 @@ namespace RestAPI_17_03_zero.Controllers
         [HttpPost]
         public int FileDownload(string token)
         {
+            var res = HttpContext.Current.Response;
             if (UserRepository.TokenIsValid(int.Parse(token)))//verificação se o token é valido
             {
                 var request = HttpContext.Current.Request;
-                var filepath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + UserRepository.GetUsername(int.Parse(token))+ "\\" + request.Headers["filename"];              
-                var res = HttpContext.Current.Response;
-                if (File.Exists(filepath) && !UserRepository.VerifyFileDate(request.Headers["filename"]))
-                {              
+                var filepath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + UserRepository.GetUsername(int.Parse(token)) + "\\" + request.Headers["filename"];
+
+                if (File.Exists(filepath) && !UserRepository.VerifyUFilesDate(UserRepository.GetUserId(int.Parse(token)), request.Headers["filename"]))
+                {
                     using (FileStream fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))//Stream para leitura do ficherio
                     {
                         using (Stream requestStream = res.OutputStream)//
@@ -95,13 +95,17 @@ namespace RestAPI_17_03_zero.Controllers
                             {
                                 requestStream.Write(buffer, 0, bytesLeft);
                             }
-                            return 1;
+                            requestStream.Close();
+                            res.Headers.Add("r", "1");
+
                         }
+
                     }
                 }
-                else return -2;
+                else res.Headers.Add("r", "-2");
             }
-            else return -1;        
+            else res.Headers.Add("r", "-1");
+            return 1;
         }
 
         /// <summary>
@@ -117,13 +121,13 @@ namespace RestAPI_17_03_zero.Controllers
             {
                 var request = HttpContext.Current.Request;//Pedido
                 string username = UserRepository.GetUsername(int.Parse(token));
-                var filePath = AppDomain.CurrentDomain.BaseDirectory +"Users\\" + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
+                var filePath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
                 string ttl = request.Headers["ttl"];
                 TimeSpan time;
-                if(TimeSpan.TryParse(ttl,out time))
+                if (TimeSpan.TryParse(ttl, out time))
                 {
                     DataBaseManager db = new DataBaseManager();
-                    db.AddFileTime(UserRepository.GetUserId(int.Parse(token)) , request.Headers["filename"], time);
+                    db.AddFileTime(UserRepository.GetUserId(int.Parse(token)), request.Headers["filename"], time);
                 }
                 using (var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))//Stream pra escrita do ficheiro
                 {
@@ -149,10 +153,12 @@ namespace RestAPI_17_03_zero.Controllers
                 var request = HttpContext.Current.Request;//Pedido
                 string username = UserRepository.GetUsername(int.Parse(token));
                 if (username != null)
-                { 
-                    var filePath = AppDomain.CurrentDomain.BaseDirectory + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
-                    if (File.Exists(filePath))
+                {
+                    var filePath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
+                    if (File.Exists(filePath) && !UserRepository.VerifyUFilesDate(UserRepository.GetUserId(int.Parse(token)), request.Headers["filename"]))
                     {
+                        DataBaseManager db = new DataBaseManager();
+                        db.RemoveFilettl(UserRepository.GetUserId(int.Parse(token)), request.Headers["filename"]);
                         File.Delete(filePath);
                         return 1;
                     }
@@ -174,7 +180,7 @@ namespace RestAPI_17_03_zero.Controllers
         {
             var request = HttpContext.Current.Request;
             string username = request.Headers["username"];
-            string password = request.Headers["password"];           
+            string password = request.Headers["password"];
             return UserRepository.RegistrationRequest(username, password);
         }
 
@@ -215,9 +221,129 @@ namespace RestAPI_17_03_zero.Controllers
         public int FileCopy(string token)
         {
             var request = HttpContext.Current.Request;
-            return 1;
+            if (UserRepository.TokenIsValid(int.Parse(token)))
+            {
+                string username = UserRepository.GetUsername(int.Parse(token));
+                string filepath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + username + "\\" + request.Headers["filename"];
+                string f1 = request.Headers["filename"];
+                string f2 = request.Headers["newfile"];
+                if (File.Exists(filepath))
+                {
+                    File.Copy(filepath, AppDomain.CurrentDomain.BaseDirectory + "Users\\" + username + "\\" + f2);
+                    return 1;
+                }
+                return -2;
+            }
+            return -1;
+        }
+
+        [Route("messages/GetUChannels/{token}")]
+        [HttpGet]
+        public string[] GetUChannels(string token)
+        {
+            var request = HttpContext.Current.Request;
+            if (UserRepository.TokenIsValid(int.Parse(token)))
+            {
+                DataBaseManager db = new DataBaseManager();
+                return db.GetSubedChannels(UserRepository.GetUserId(int.Parse(token)));
+            }
+            string[] r = { "-1", "Token inválido" };
+            return r;
         }
 
 
+        [Route("messages/GetAllChannels/{token}")]
+        [HttpGet]
+        public string[] GetAllChannels(string token)
+        {
+            var request = HttpContext.Current.Request;
+            if (UserRepository.TokenIsValid(int.Parse(token)))
+            {
+                DataBaseManager db = new DataBaseManager();
+                return db.GetChannels();
+            }
+            string[] r = { "-1", "Token inválido" };
+            return r;
+        }
+
+        [Route("messages/SendMessage/{token}")]
+        [HttpPost]
+        public int SendMessage(string token)
+        {
+            var request = HttpContext.Current.Request;
+            if (UserRepository.TokenIsValid(int.Parse(token)))
+            {
+                string channel = request.Headers["channel"];
+                if (UserRepository.IsUserSub(UserRepository.GetUserId(int.Parse(token)), channel))
+                {
+                    DataBaseManager db = new DataBaseManager();
+                    string message = UserRepository.GetUsername(int.Parse(token)) + "@" + DateTime.Now.ToString() + ": " + request.Headers["message"] + "\n";
+                    string file = db.GetChannelFile(channel);
+                    File.AppendAllText(AppDomain.CurrentDomain.BaseDirectory + "Canais\\" + file, message);
+                    return 1;
+                }
+                return -2;
+            }
+            return -1;
+        }
+
+        [Route("messages/GetMessage/{token}")]
+        [HttpPost]
+        public string[] GetMessage(string token)
+        {
+            string[] r = { "-1", "Token inválido" };
+            var request = HttpContext.Current.Request;
+            if (UserRepository.TokenIsValid(int.Parse(token)))
+            {
+
+                string channel = request.Headers["channel"];
+                if (UserRepository.IsUserSub(UserRepository.GetUserId(int.Parse(token)), channel))
+                {
+                    DataBaseManager db = new DataBaseManager();
+
+                    string file = db.GetChannelFile(channel);
+                    IEnumerable<string> chat = File.ReadLines(AppDomain.CurrentDomain.BaseDirectory + "Canais\\" + file);
+
+                    if (chat.Count() <= 10) return chat.ToArray();
+                    else
+                    {
+                        int j = 0;
+                        int length = chat.Count();
+                        for (int i = length - 10; i < length; i++)
+                        {
+                            r[j] = chat.ElementAt(i);
+                            j++;
+                        }
+
+                        return r;
+                    }
+                    
+                }
+                return r;
+            }
+            return r;
+        }
+
+
+        [Route("messages/SubChannel/{token}")]
+        [HttpPost]
+        public int SubChannel(string token)
+        {
+            var request = HttpContext.Current.Request;
+            if (UserRepository.TokenIsValid(int.Parse(token)))
+            {
+                string channel = request.Headers["channel"];
+                DataBaseManager db = new DataBaseManager();
+                if (UserRepository.ChannelExists(channel))
+                {                   
+                    db.SubToChannel(channel, UserRepository.GetUserId(int.Parse(token)));
+                    return 1;
+                }
+                return -2;
+            }
+            return -1;
+        }
     }
+
 }
+

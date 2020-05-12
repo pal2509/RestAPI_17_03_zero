@@ -25,32 +25,63 @@ namespace RestAPI_17_03_zero.Services
         #endregion
         #region Methods
 
-        public static bool VerifyFileDate(string filename)
+        public static bool VerifyUFilesDate(int uid, string filename)
         {
             DataBaseManager db = new DataBaseManager();
-            Filettl f = db.GetFile(filename);
+            List<Filettl> f = db.GetUFiles(uid);
             if (f != null)
             {
-                DateTime now = DateTime.Now;
-                TimeSpan diff = now.Subtract(f.FVal);
-                if (diff > new TimeSpan(0, 0, 0))
+                foreach (Filettl t in f)
                 {
-                    DeleteUserFile(f.Uid, f.FName);
-                    db.RemoveFilettl(f.FName);
-                    return true;
+                    if (t.FName.CompareTo(filename) == 0)
+                    {
+                        DateTime now = DateTime.Now;
+                        TimeSpan diff = now.Subtract(t.FVal);
+                        if (diff > new TimeSpan(0, 0, 0))
+                        {
+                            DeleteUserFile(t.Uid, t.FName);
+                            db.RemoveFilettl(uid, t.FName);
+                            return true;
+                        }
+                    }
                 }
             }
             return false;
         }
 
+
+    
+
+        public static bool VerifyUFilesDate(int uid)
+        {
+            DataBaseManager db = new DataBaseManager();
+            List<Filettl> f = db.GetUFiles(uid);
+            if (f != null)
+            {
+                foreach (Filettl t in f)
+                {      
+                    DateTime now = DateTime.Now;
+                    TimeSpan diff = now.Subtract(t.FVal);
+                    if (diff > new TimeSpan(0, 0, 0))
+                    {
+                        DeleteUserFile(t.Uid, t.FName);
+                        db.RemoveFilettl(t.Uid,t.FName);
+                        return true;
+                    }                    
+                }
+            }
+            return false;
+        }
+
+
         private static void DeleteUserFile(int id, string filename)
         {
             DataBaseManager db = new DataBaseManager();
-            var filepath = AppDomain.CurrentDomain.BaseDirectory + db.GetUsername(id) + "\\" + filename;
+            var filepath = AppDomain.CurrentDomain.BaseDirectory +"Users\\"+ db.GetUsername(id) + "\\" + filename;
             if (File.Exists(filepath))
             {
+                db.RemoveFilettl(id,filename);
                 File.Delete(filepath);
-
             }
         }
 
@@ -220,6 +251,24 @@ namespace RestAPI_17_03_zero.Services
                 }
             }
             return -1;
+        }
+
+        public static bool IsUserSub(int id, string channel)
+        {
+            DataBaseManager db = new DataBaseManager();
+            int r = db.IsUserSub(id, channel);
+            if (r == -1) return false;
+            return true;
+        }
+
+        public static bool ChannelExists(string channel)
+        {
+            DataBaseManager db = new DataBaseManager();
+
+            int r = db.GetChannelId(channel);
+            if (r == -1) return false;
+            else return true;
+
         }
 
 

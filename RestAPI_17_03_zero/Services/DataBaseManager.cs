@@ -26,6 +26,26 @@ namespace RestAPI_17_03_zero.Services
                            Port,
                            Password);
 
+        public List<Filettl> GetUFiles(int uid)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT * FROM filettl WHERE u_id = {0}", uid);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            List<Filettl> result = new List<Filettl>();
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    Filettl values = new Filettl(dataReader.GetInt32(0), dataReader.GetString(1), DateTime.Parse(dataReader.GetString(2)));
+
+                    result.Add(values);
+                }
+            }
+            conn.Close();
+            return result;
+        }
+
         /// <summary>
         /// Recebe todos os users da base de dados
         /// </summary>
@@ -89,15 +109,51 @@ namespace RestAPI_17_03_zero.Services
         }
 
 
-        public int RemoveFilettl(string filename)
+        public int RemoveFilettl(int uid, string filename)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
-            var sqlStatement = string.Format("DELETE FROM filettl WHERE f_name = '{0}'", filename);
+            var sqlStatement = string.Format("DELETE FROM filettl WHERE f_name = '{0}' AND u_id = {1}", filename, uid);
             var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
             conn.Open();
             sqlCommand.ExecuteNonQuery();
             conn.Close();
             return 1;
+        }
+
+        public string[] GetChannels()
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT c_name FROM canais");
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            List<string> r = new List<string>();
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r.Add(dataReader.GetString(0));
+                }
+            }
+            conn.Close();
+            return r.ToArray();
+        }
+
+        public string[] GetSubedChannels(int uid)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT c_name FROM canais INNER JOIN (SELECT c_id FROM canaisrelação WHERE u_id = {0}) ids ON ids.c_id = canais.c_id",uid);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            List<string> r = new List<string>();
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r.Add(dataReader.GetString(0));
+                }
+            }
+            conn.Close();
+            return r.ToArray();
         }
 
 
@@ -212,6 +268,43 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        public string GetChannelFile(string channel)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT c_file FROM canais WHERE c_name = '{0}'",channel);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            string r = null;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetString(0);
+                }
+            }
+            conn.Close();
+            return r;
+        }
+
+        public int IsUserSub(int uid, string channel)
+        {
+            int cid = GetChannelId(channel);
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT c_id FROM canaisRelação WHERE u_id = {0} AND c_id = {1}", uid, cid);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            int r = -1;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetInt32(0);
+                }
+            }
+            conn.Close();
+            return r;
+        }
+
 
         public string GetUsername(int id)
         {
@@ -251,6 +344,26 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        public int GetChannelId(string channel)
+        {
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("SELECT c_id FROM canais WHERE c_name = '{0}'", channel);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            int r = -1;
+            using (var dataReader = sqlCommand.ExecuteReader())
+            {
+                while (dataReader.Read())
+                {
+                    r = dataReader.GetInt32(0);
+                }
+            }
+
+            conn.Close();
+            return r;
+        }
+
+
         public int AddUser(User u)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -278,6 +391,18 @@ namespace RestAPI_17_03_zero.Services
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
             var sqlStatement = string.Format("INSERT INTO pedidoresg ( u_name, u_psswd ) values ( '{0}','{1}' );", username, psswd);
+            var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
+            conn.Open();
+            sqlCommand.ExecuteNonQuery();
+            conn.Close();
+            return 1;
+        }
+
+        public int SubToChannel(string channel, int uid)
+        {
+            int c = GetChannelId(channel);
+            NpgsqlConnection conn = new NpgsqlConnection(connString);
+            var sqlStatement = string.Format("INSERT INTO canaisrelação values ( {0},{1} );", c, uid);
             var sqlCommand = new NpgsqlCommand(sqlStatement, conn);
             conn.Open();
             sqlCommand.ExecuteNonQuery();

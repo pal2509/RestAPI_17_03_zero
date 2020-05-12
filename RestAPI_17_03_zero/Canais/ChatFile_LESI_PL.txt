@@ -1,0 +1,6 @@
+Chat LESI-PL
+admin@08/05/2020 12:04:37: Olá, eu sou o administrador.
+admin@08/05/2020 12:06:55: Isto está tudo desformatado.
+admin@12/05/2020 10:57:42: estarTestar o envio de mensagens
+admin@12/05/2020 11:00:27: Novo teste de envio de mensagem.
+admin@12/05/2020 11:03:13: OLá!!!

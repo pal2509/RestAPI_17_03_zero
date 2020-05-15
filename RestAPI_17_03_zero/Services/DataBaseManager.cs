@@ -26,6 +26,11 @@ namespace RestAPI_17_03_zero.Services
                            Port,
                            Password);
 
+        /// <summary>
+        /// Retorna os tempos de vida dos ficheiros todos de um utilizador
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <returns></returns>
         public List<Filettl> GetUFiles(int uid)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -70,6 +75,10 @@ namespace RestAPI_17_03_zero.Services
             return result;
         }
 
+        /// <summary>
+        /// Retorna todos os ficheiros que têm tempo de vida da base de dados para uma lista
+        /// </summary>
+        /// <returns></returns>
         public List<Filettl> GetFiles()
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -89,7 +98,11 @@ namespace RestAPI_17_03_zero.Services
             conn.Close();
             return result;
         }
-
+        /// <summary>
+        /// Procura um determinado ficheiro na base dados se para ver o seu tempo de vida
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
         public Filettl GetFile(string filename)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -108,7 +121,12 @@ namespace RestAPI_17_03_zero.Services
             return result;
         }
 
-
+        /// <summary>
+        /// Remove o tempo de vida de um ficheiro da base de dados
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
         public int RemoveFilettl(int uid, string filename)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -120,6 +138,10 @@ namespace RestAPI_17_03_zero.Services
             return 1;
         }
 
+        /// <summary>
+        /// Retorna todos os canais existentes
+        /// </summary>
+        /// <returns></returns>
         public string[] GetChannels()
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -138,6 +160,11 @@ namespace RestAPI_17_03_zero.Services
             return r.ToArray();
         }
 
+        /// <summary>
+        /// Retorna os canais que um utilizador está subscrito
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <returns></returns>
         public string[] GetSubedChannels(int uid)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -156,8 +183,11 @@ namespace RestAPI_17_03_zero.Services
             return r.ToArray();
         }
 
-
-
+        /// <summary>
+        /// Remove um pedido de registo da base de dados
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public int RemoveRequest(string username)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -250,6 +280,10 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        /// <summary>
+        /// Faz a contagem de utilizadores
+        /// </summary>
+        /// <returns></returns>
         public int UserCount()
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -268,6 +302,11 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        /// <summary>
+        /// Reotorna o nome do ficheiro em que o chat desse canal está
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
         public string GetChannelFile(string channel)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -286,6 +325,12 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        /// <summary>
+        /// Verifica se o utilizador está subscrito a esse canal
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <param name="channel"></param>
+        /// <returns>Retorna -1 se não está subscrito, se está subscrito retorna o id do canal</returns>
         public int IsUserSub(int uid, string channel)
         {
             int cid = GetChannelId(channel);
@@ -305,7 +350,11 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
-
+        /// <summary>
+        /// Retorna o nome de utilizador através do seu id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string GetUsername(int id)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -324,7 +373,11 @@ namespace RestAPI_17_03_zero.Services
             conn.Close();
             return r;
         }
-
+        /// <summary>
+        /// Retorna o nivel de acesso do utilizador
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public int GetAccessLevel(int id)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -344,6 +397,11 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
+        /// <summary>
+        /// Retorna o id do canal através do seu nome
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
         public int GetChannelId(string channel)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -363,7 +421,11 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
-
+        /// <summary>
+        /// Adiciona um utilizador á base de dados
+        /// </summary>
+        /// <param name="u"></param>
+        /// <returns></returns>
         public int AddUser(User u)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -375,7 +437,13 @@ namespace RestAPI_17_03_zero.Services
             return 1;
         }
 
-
+        /// <summary>
+        /// Adiciona um tempo de vida a um ficheiro
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <param name="filename"></param>
+        /// <param name="time"></param>
+        /// <returns></returns>
         public int AddFileTime(int uid, string filename, TimeSpan time )
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -387,6 +455,12 @@ namespace RestAPI_17_03_zero.Services
             return 1;
         }
 
+        /// <summary>
+        /// Adiciona um pedido de registo á base de dados
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="psswd"></param>
+        /// <returns></returns>
         public int AddRegistrationRequest(string username, string psswd)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -398,6 +472,12 @@ namespace RestAPI_17_03_zero.Services
             return 1;
         }
 
+        /// <summary>
+        /// Subscreve um utilizador a um canal
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <param name="uid"></param>
+        /// <returns></returns>
         public int SubToChannel(string channel, int uid)
         {
             int c = GetChannelId(channel);
@@ -410,6 +490,11 @@ namespace RestAPI_17_03_zero.Services
             return 1;
         }
 
+        /// <summary>
+        /// Retorna um pedido de registo através do seu nome de utilizador
+        /// </summary>
+        /// <param name="usrnm"></param>
+        /// <returns></returns>
         public Registration GetRegRequest(string usrnm)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -428,7 +513,12 @@ namespace RestAPI_17_03_zero.Services
             return r;
         }
 
-
+        /// <summary>
+        /// Verifica se um pedido de registo existe através do nome de utilizador no pedido de registo
+        /// </summary>
+        /// <param name="usrnm"></param>
+        /// <param name="psswd"></param>
+        /// <returns></returns>
         public bool RegRequestExists(string usrnm, string psswd)
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);
@@ -448,6 +538,10 @@ namespace RestAPI_17_03_zero.Services
             else return true;
         }
 
+        /// <summary>
+        /// Retorna todos os pedidos de registo
+        /// </summary>
+        /// <returns></returns>
         public List<string> RegRequestList()
         {
             NpgsqlConnection conn = new NpgsqlConnection(connString);

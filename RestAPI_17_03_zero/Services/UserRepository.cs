@@ -12,6 +12,8 @@ using Npgsql;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Sockets;
+using System.Web.WebSockets;
 
 namespace RestAPI_17_03_zero.Services
 {
@@ -20,11 +22,16 @@ namespace RestAPI_17_03_zero.Services
 
         #region Attributes
         static List<Token> tokens = new List<Token>(); //Lista para guradar os tokens de cada id que está loged in
-        static Random rand = new Random();
-
+        static Random rand = new Random();//Gerador de números á sorte para os tokens
         #endregion
         #region Methods
 
+        /// <summary>
+        /// Verfica se os ficheiros de um dado utilizador estão dentro do prazo de vida
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
         public static bool VerifyUFilesDate(int uid, string filename)
         {
             DataBaseManager db = new DataBaseManager();
@@ -49,9 +56,11 @@ namespace RestAPI_17_03_zero.Services
             return false;
         }
 
-
-    
-
+        /// <summary>
+        /// Verifica o tempo de vida de todos os ficheiros
+        /// </summary>
+        /// <param name="uid"></param>
+        /// <returns></returns>
         public static bool VerifyUFilesDate(int uid)
         {
             DataBaseManager db = new DataBaseManager();
@@ -73,7 +82,11 @@ namespace RestAPI_17_03_zero.Services
             return false;
         }
 
-
+        /// <summary>
+        /// Apaga um ficheiro de um utilizador
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="filename"></param>
         private static void DeleteUserFile(int id, string filename)
         {
             DataBaseManager db = new DataBaseManager();
@@ -85,6 +98,12 @@ namespace RestAPI_17_03_zero.Services
             }
         }
 
+        /// <summary>
+        /// Cria um pedido de registo
+        /// </summary>
+        /// <param name="usrnm"></param>
+        /// <param name="psswd"></param>
+        /// <returns></returns>
         public static int RegistrationRequest(string usrnm,string psswd)
         {
             
@@ -97,6 +116,11 @@ namespace RestAPI_17_03_zero.Services
             else return -1;
         }
 
+        /// <summary>
+        /// Retorna a lista de pedidos de registo
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public static List<string> RequestList(int token)
         {
             DataBaseManager db = new DataBaseManager();
@@ -107,6 +131,12 @@ namespace RestAPI_17_03_zero.Services
             return null;
         }
 
+        /// <summary>
+        /// Aceita pedidos de registo
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public static int RequestAcception(int token, string username)
         {
             DataBaseManager db = new DataBaseManager();
@@ -199,6 +229,11 @@ namespace RestAPI_17_03_zero.Services
             return false;
         }
 
+        /// <summary>
+        /// Verifica se um utilizador está logged
+        /// </summary>
+        /// <param name="idUser"></param>
+        /// <returns></returns>
         private static bool IsLoggedIn(int idUser)
         {
             Token[] t = tokens.ToArray();
@@ -229,6 +264,11 @@ namespace RestAPI_17_03_zero.Services
             else return false;
         }
 
+        /// <summary>
+        /// Vai buscar o nome de utilizador através do token
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public static string GetUsername(int token)
         {
             if(TokenIsValid(token))
@@ -239,6 +279,11 @@ namespace RestAPI_17_03_zero.Services
             return null;
         }
 
+        /// <summary>
+        /// Vai buscar o id do utilizador através do token
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public static int GetUserId(int token)
         {
             if (TokenIsValid(token))
@@ -253,6 +298,12 @@ namespace RestAPI_17_03_zero.Services
             return -1;
         }
 
+        /// <summary>
+        /// Verifica se um utilizador está subscrito a um determinado canal
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="channel"></param>
+        /// <returns></returns>
         public static bool IsUserSub(int id, string channel)
         {
             DataBaseManager db = new DataBaseManager();
@@ -261,6 +312,11 @@ namespace RestAPI_17_03_zero.Services
             return true;
         }
 
+        /// <summary>
+        /// Verifica de um canal existe
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
         public static bool ChannelExists(string channel)
         {
             DataBaseManager db = new DataBaseManager();

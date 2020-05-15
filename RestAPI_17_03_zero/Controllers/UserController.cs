@@ -8,6 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 using System.Web;
 using System.Web.Http;
 using System.Web.UI;
@@ -124,6 +127,7 @@ namespace RestAPI_17_03_zero.Controllers
                 var filePath = AppDomain.CurrentDomain.BaseDirectory + "Users\\" + username + "\\" + request.Headers["filename"];//Caminho do ficheiro
                 string ttl = request.Headers["ttl"];
                 TimeSpan time;
+                //Adiciona o tempo de vida aos ficheiros
                 if (TimeSpan.TryParse(ttl, out time))
                 {
                     DataBaseManager db = new DataBaseManager();
@@ -237,6 +241,11 @@ namespace RestAPI_17_03_zero.Controllers
             return -1;
         }
 
+        /// <summary>
+        /// Retorna os canais que esse utilizador está subscrito
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("messages/GetUChannels/{token}")]
         [HttpGet]
         public string[] GetUChannels(string token)
@@ -252,6 +261,11 @@ namespace RestAPI_17_03_zero.Controllers
         }
 
 
+        /// <summary>
+        /// Retorna todos os canais disponiveis para subscrever
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("messages/GetAllChannels/{token}")]
         [HttpGet]
         public string[] GetAllChannels(string token)
@@ -266,6 +280,12 @@ namespace RestAPI_17_03_zero.Controllers
             return r;
         }
 
+
+        /// <summary>
+        /// Permite ao utilizador mandar mensagens para um canal
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("messages/SendMessage/{token}")]
         [HttpPost]
         public int SendMessage(string token)
@@ -287,6 +307,11 @@ namespace RestAPI_17_03_zero.Controllers
             return -1;
         }
 
+        /// <summary>
+        /// Retorna as mensagens de um canal 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("messages/GetMessage/{token}")]
         [HttpPost]
         public string[] GetMessage(string token)
@@ -301,12 +326,15 @@ namespace RestAPI_17_03_zero.Controllers
                 {
                     DataBaseManager db = new DataBaseManager();
 
-                    string file = db.GetChannelFile(channel);
+                    string file = db.GetChannelFile(channel);//Buscar o nome do ficheiro á base de dados
+                    //Leitura do ficheiro
                     IEnumerable<string> chat = File.ReadLines(AppDomain.CurrentDomain.BaseDirectory + "Canais\\" + file);
 
                     if (chat.Count() <= 10) return chat.ToArray();
                     else
                     {
+                        //Ir buscar as ultimas 10 linhas do chat para retornar
+                        r = new string[10];
                         int j = 0;
                         int length = chat.Count();
                         for (int i = length - 10; i < length; i++)
@@ -317,14 +345,18 @@ namespace RestAPI_17_03_zero.Controllers
 
                         return r;
                     }
-                    
+
                 }
                 return r;
             }
             return r;
         }
 
-
+        /// <summary>
+        /// Método para subscrever a um canal
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         [Route("messages/SubChannel/{token}")]
         [HttpPost]
         public int SubChannel(string token)
@@ -334,16 +366,20 @@ namespace RestAPI_17_03_zero.Controllers
             {
                 string channel = request.Headers["channel"];
                 DataBaseManager db = new DataBaseManager();
-                if (UserRepository.ChannelExists(channel))
-                {                   
-                    db.SubToChannel(channel, UserRepository.GetUserId(int.Parse(token)));
-                    return 1;
+                if (UserRepository.ChannelExists(channel))//Verifica se o canal existe
+                {
+                    if (db.IsUserSub(UserRepository.GetUserId(int.Parse(token)), channel) == -1)//Verificar se o utilizador já é sub
+                    {
+                        db.SubToChannel(channel, UserRepository.GetUserId(int.Parse(token)));
+                        return 1;
+                    }
+                    return -3;
                 }
                 return -2;
             }
             return -1;
         }
-    }
 
+    }
 }
 

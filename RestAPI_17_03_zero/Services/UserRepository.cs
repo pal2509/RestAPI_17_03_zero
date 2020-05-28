@@ -65,21 +65,35 @@ namespace RestAPI_17_03_zero.Services
         {
             DataBaseManager db = new DataBaseManager();
             List<Filettl> f = db.GetUFiles(uid);
+            List<Filettl> toRemove = f.FindAll(x => DateTime.Now.Subtract(x.FVal) > new TimeSpan(0, 0, 0));
             if (f != null)
             {
-                foreach (Filettl t in f)
-                {      
-                    DateTime now = DateTime.Now;
-                    TimeSpan diff = now.Subtract(t.FVal);
-                    if (diff > new TimeSpan(0, 0, 0))
-                    {
-                        DeleteUserFile(t.Uid, t.FName);
-                        db.RemoveFilettl(t.Uid,t.FName);
-                        return true;
-                    }                    
-                }
+                toRemove.ForEach(x =>
+                {
+                    DeleteUserFile(x.Uid, x.FName);
+                    db.RemoveFilettl(x.Uid, x.FName);
+                });
+                return true;
             }
-            return false;
+            else return false;
+
+            //DataBaseManager db = new DataBaseManager();
+            //List<Filettl> f = db.GetUFiles(uid);
+            //if (f != null)
+            //{
+            //    foreach (Filettl t in f)
+            //    {      
+            //        DateTime now = DateTime.Now;
+            //        TimeSpan diff = now.Subtract(t.FVal);
+            //        if (diff > new TimeSpan(0, 0, 0))
+            //        {
+            //            DeleteUserFile(t.Uid, t.FName);
+            //            db.RemoveFilettl(t.Uid,t.FName);
+            //            return true;
+            //        }                    
+            //    }
+            //}
+            //return false;
         }
 
         /// <summary>
@@ -218,15 +232,17 @@ namespace RestAPI_17_03_zero.Services
         /// <returns></returns>
         public static bool TokenIsValid(int token)
         {
-            Token[] t = tokens.ToArray();
-            foreach(Token a in t)
-            {
-                if(a.Idtoken == token)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return tokens.Exists(x=>x.Idtoken == token);
+
+            //Token[] t = tokens.ToArray();
+            //foreach(Token a in t)
+            //{
+            //    if(a.Idtoken == token)
+            //    {
+            //        return true;
+            //    }
+            //}
+            //return false;
         }
 
         /// <summary>

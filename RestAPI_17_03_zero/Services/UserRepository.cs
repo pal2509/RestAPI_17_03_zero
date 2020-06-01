@@ -66,16 +66,22 @@ namespace RestAPI_17_03_zero.Services
             DataBaseManager db = new DataBaseManager();
             List<Filettl> f = db.GetUFiles(uid);
             List<Filettl> toRemove = f.FindAll(x => DateTime.Now.Subtract(x.FVal) > new TimeSpan(0, 0, 0));
-            if (f != null)
-            {
-                toRemove.ForEach(x =>
-                {
-                    DeleteUserFile(x.Uid, x.FName);
-                    db.RemoveFilettl(x.Uid, x.FName);
-                });
-                return true;
-            }
-            else return false;
+            toRemove.ForEach(x => { DeleteUserFile(x.Uid, x.FName); db.RemoveFilettl(x.Uid, x.FName); });
+            return null != toRemove;
+
+            //DataBaseManager db = new DataBaseManager();
+            //List<Filettl> f = db.GetUFiles(uid);
+            //List<Filettl> toRemove = f.FindAll(x => DateTime.Now.Subtract(x.FVal) > new TimeSpan(0, 0, 0));
+            //if (f != null)
+            //{
+            //    toRemove.ForEach(x =>
+            //    {
+            //        DeleteUserFile(x.Uid, x.FName);
+            //        db.RemoveFilettl(x.Uid, x.FName);
+            //    });
+            //    return true;
+            //}
+            //else return false;
 
             //DataBaseManager db = new DataBaseManager();
             //List<Filettl> f = db.GetUFiles(uid);
